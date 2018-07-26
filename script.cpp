@@ -34,7 +34,7 @@ string clockTimeConversion(string t)
     t = t.substr(t.find_first_of(":")+1);
     int seconds = stoi(t);
     int total_seconds = seconds + (minutes*60) + (hours*60*60);
-    string return_string = static_cast<ostringstream*>( & (ostringstream() << total_seconds) )->str();
+    string return_string = to_string(total_seconds);
     return return_string;
     
 }
@@ -45,19 +45,19 @@ string memoryUnitConversion(string m)
     if (m.find_first_of("g") != -1)
     {
         converted_num = converted_num*1024*1024*1024;
-        m = static_cast<ostringstream*>( &(ostringstream() << converted_num) )->str();
+        m = to_string(converted_num);
         return m;
     }
     else if (m.find_first_of("m") != -1)
     {
         converted_num = converted_num*1024*1024;
-        m = static_cast<ostringstream*>( &(ostringstream() << converted_num) )->str();
+        m = to_string(converted_num);
         return m;
     }
     else if (m.find_first_of("k") != -1)
     {
         converted_num = converted_num*1024;
-        m = static_cast<ostringstream*>( &(ostringstream() << converted_num) )->str();
+        m = to_string(converted_num);
         return m;
     }
     else if (m.find_first_of("b") != -1)
