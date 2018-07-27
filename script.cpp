@@ -4,11 +4,12 @@
 #include <vector>
 #include <map>
 #include <iterator>
-#include <boost/uuid/uuid.hpp>            // uuid class
-#include <boost/uuid/uuid_generators.hpp> // generators
-#include <boost/uuid/uuid_io.hpp>         // streaming operators
 #include <sstream>
 #include <cstdlib>
+#include <unistd.h>
+//#include <boost/uuid/uuid.hpp>            // uuid class
+//#include <boost/uuid/uuid_generators.hpp> // generators
+//#include <boost/uuid/uuid_io.hpp> // streaming operators
 
 using namespace std;
 
@@ -83,7 +84,7 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
     string JobDescriptionEnd = "\n</jsdl:JobDescription>\n</jsdl:JobDefinition>";
     string Application = "\n<jsdl:Application>";
     string POSIXApplication = "\n<jsdl-posix:POSIXApplication>";
-    string Resources = "\n<jsdl:Resources>";
+    string Resources = "\n<jsdl:Resources>\n<jsdl:OperatingSystem>\n<jsdl:OperatingSystemType>\n<jsdl:OperatingSystemName>Linux</jsdl:OperatingSystemName>\n</jsdl:OperatingSystemType>\n</jsdl:OperatingSystem>\n<jsdl:CPUArchitecture>\n<jsdl:CPUArchitectureName>x86</jsdl:CPUArchitectureName>\n</jsdl:CPUArchitecture>";
     string JobIdentification =  "\n<jsdl:JobIdentification>";
     string DataStaging = "";
     
@@ -97,6 +98,12 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
             POSIXApplication += itr->second;
             POSIXApplication += "</jsdl-posix:Error>";
         }
+	else if (itr-> first == "executable")
+	  {
+	    POSIXApplication += "\n<jsdl-posix:Executable>";
+	    POSIXApplication += itr->second;
+	    POSIXApplication +="</jsdl-posix:Executable>";
+	  }
         
         else if (itr-> first == "input")
         {
@@ -183,17 +190,17 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
         jsdl << JobIdentification;
     }
     if (POSIXApplication != "\n<jsdl-posix:POSIXApplication>"){
-        POSIXApplication +=  "\n</jsdl-spmd:POSIXApplication>";
+        POSIXApplication +=  "\n</jsdl-posix:POSIXApplication>";
         Application += POSIXApplication;
     }
     if (Application != "\n<jsdl:Application>"){
         Application += "\n</jsdl:Application>";
         jsdl << Application;
     }
-    if (Resources != "\n<jsdl:Resources>"){
-        Resources += "\n</jsdl:Resources>";
-        jsdl << Resources;
-    }
+
+    Resources += "\n</jsdl:Resources>";
+    jsdl << Resources;
+   
 
     jsdl << DataStaging;
     jsdl << JobDescriptionEnd;
@@ -202,19 +209,26 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
 
 }
 
-void createStageInAndOutFile(vector<staging> stagingCommands, string GUID, string rns_prefix, string filename)
+void createStageInAndOutFile(vector<staging> stagingCommands, string GUID, string rns_prefix, string filename, string sh_outfile)
 {
     ofstream stagein(filename + ".stagein"); 
     ofstream stageout(filename + ".stageout");
+
+    char buff[1024];
+    char *path;
+    path = getcwd(buff,1023);
+    string cwd = path;
+
+    stagein << "cp local:"<< cwd << "/" << sh_outfile << " " << rns_prefix << GUID << "/" << sh_outfile << endl;
     for (int i = 0; i < stagingCommands.size(); ++i)
     {
         if (stagingCommands[i].StageIn)
         {
-            stagein << "cp local:" << stagingCommands[i].LocalSourcePath << " " << rns_prefix << GUID << "/" << stagingCommands[i].SourceFile;
+	  stagein << "cp local:" << stagingCommands[i].LocalSourcePath << " " << rns_prefix << GUID << "/" << stagingCommands[i].SourceFile << endl;
         }
         else 
         {
-            stageout << "cp " << rns_prefix << GUID << "/" << stagingCommands[i].SourceFile << " local:" << stagingCommands[i].LocalTargetPath;
+	  stageout << "cp " << rns_prefix << GUID << "/" << stagingCommands[i].SourceFile << " local:" << stagingCommands[i].LocalTargetPath << endl;
         }
     }
 }
@@ -226,12 +240,13 @@ void createStageInAndOutFile(vector<staging> stagingCommands, string GUID, strin
 int main(int argc, char* argv[])
 {
     
-    string rns_prefix = "rns:/tmp/ccc/";
-
+    string rns_prefix = "rns:/etc/tmp/lhstesting/";
+    /*
     boost::uuids::random_generator gen;
     boost::uuids::uuid id = gen();
     string GUID = to_string(id);
-
+    */
+    string GUID = "b93c542a-98a4-44f0-be54-d16503e983bd";
     string filename = argv[1];
 
     map<string,string> Directives;
@@ -248,7 +263,8 @@ int main(int argc, char* argv[])
 
 
     ofstream shell(sh_outfile); // stream write to sh file
-    string sent; 
+    string sent;
+    Directives.insert(pair<string,string>("executable",sh_outfile));
     
     while (getline (file, sent)) // while there are lines left to read
         {
@@ -258,7 +274,8 @@ int main(int argc, char* argv[])
                 int equals_index = stripped.find('=');
                 string directiveUsed = stripped.substr(0,equals_index);
                 string optionUsed = stripped.substr(equals_index+1);
-                Directives.insert(pair<string,string>(directiveUsed, optionUsed)); 
+                Directives.insert(pair<string,string>(directiveUsed, optionUsed));
+		
                 
             }
 
@@ -292,8 +309,12 @@ int main(int argc, char* argv[])
 
                 if (StagingOptions.StageIn && source_file_path[0] != '/')
                 {
-                    string cwd = "/figure_out_how_to_get_cwd/" + source_file_path;
-                    StagingOptions.LocalSourcePath = cwd;
+		  char buff[1024];
+		  char *path;
+		  path = getcwd(buff,1023);
+		  string cwd = path;
+                  cwd += "/"+ source_file_path;
+                  StagingOptions.LocalSourcePath = cwd;
                 }
                 string source_file = source_file_path;
                 // Strip the source file path to just the file name
@@ -307,8 +328,13 @@ int main(int argc, char* argv[])
                 // Grab second file path and strip it from remaining command
                 string target_file_path = Stripped.substr(0, Stripped.find_first_of(" \t"));
                 if (!(StagingOptions.StageIn) && target_file_path[0] != '/')
-                {
-                    string cwd = "/figure_out_how_to_get_cwd/" + target_file_path;
+		  {
+		    char buff[1024];
+		    char *path;
+		    path = getcwd(buff,1023);
+		    
+                    string cwd = path;
+		    cwd += "/" + target_file_path;
                     StagingOptions.LocalTargetPath = cwd;
                 }
                 string target_file = target_file_path;
@@ -360,7 +386,7 @@ int main(int argc, char* argv[])
         }
     
     processDirectivesIntoJSDLFile(Directives, StagingCommands, GUID, rns_prefix, filename + ".jsdl");
-    createStageInAndOutFile(StagingCommands, GUID, rns_prefix, filename);
+    createStageInAndOutFile(StagingCommands, GUID, rns_prefix, filename, sh_outfile);
     cout << GUID << endl;
     
 }
