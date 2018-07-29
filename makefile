@@ -1,5 +1,5 @@
-CXX=gcc
-CXXFLAGS= -std=c++11
+CXX=g++
+CXXFLAGS= -std=c++11 -o tojsdl
 
 OFILES = script.cpp
 

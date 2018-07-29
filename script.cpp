@@ -7,6 +7,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <unistd.h>
+
 //#include <boost/uuid/uuid.hpp>            // uuid class
 //#include <boost/uuid/uuid_generators.hpp> // generators
 //#include <boost/uuid/uuid_io.hpp> // streaming operators
@@ -84,10 +85,10 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
     string JobDescriptionEnd = "\n</jsdl:JobDescription>\n</jsdl:JobDefinition>";
     string Application = "\n<jsdl:Application>";
     string POSIXApplication = "\n<jsdl-posix:POSIXApplication>";
-    string Resources = "\n<jsdl:Resources>\n<jsdl:OperatingSystem>\n<jsdl:OperatingSystemType>\n<jsdl:OperatingSystemName>Linux</jsdl:OperatingSystemName>\n</jsdl:OperatingSystemType>\n</jsdl:OperatingSystem>\n<jsdl:CPUArchitecture>\n<jsdl:CPUArchitectureName>x86</jsdl:CPUArchitectureName>\n</jsdl:CPUArchitecture>";
+    string Resources = "\n<jsdl:Resources>\n<jsdl:OperatingSystem>\n<jsdl:OperatingSystemType>\n<jsdl:OperatingSystemName>LINUX</jsdl:OperatingSystemName>\n</jsdl:OperatingSystemType>\n</jsdl:OperatingSystem>\n<jsdl:CPUArchitecture>\n<jsdl:CPUArchitectureName>x86</jsdl:CPUArchitectureName>\n</jsdl:CPUArchitecture>";
     string JobIdentification =  "\n<jsdl:JobIdentification>";
     string DataStaging = "";
-    
+    bool job_name_not_added = true;
 
     for (itr = directives.begin(); itr != directives.end(); ++itr)
     {
@@ -132,6 +133,7 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
             JobIdentification += "\n<jsdl:JobName>";
             JobIdentification += itr->second;
             JobIdentification += "</jsdl:JobName>";
+	    job_name_not_added = false;
         }
 
         else if (itr -> first == "mem")
@@ -161,7 +163,7 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
 
 
         if (stagingCommands[i].StageIn)
-        {
+	  {
             DataStaging += "\n<jsdl:Source>\n<jsdl:URI>";
             DataStaging += rns_prefix;
             DataStaging += GUID + "/";
@@ -186,8 +188,14 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
     jsdl << JobDescriptionStart;
 
     if (JobIdentification != "\n<jsdl:JobIdentification>"){
+      if (job_name_not_added)
+	{
+	  JobIdentification += "\n<jsdl:JobName>Autogen_JobName</jsdl:JobName>";
+	  job_name_not_added = false;
+	}
         JobIdentification += "\n</jsdl:JobIdentification>";
         jsdl << JobIdentification;
+	
     }
     if (POSIXApplication != "\n<jsdl-posix:POSIXApplication>"){
         POSIXApplication +=  "\n</jsdl-posix:POSIXApplication>";
@@ -239,7 +247,8 @@ void createStageInAndOutFile(vector<staging> stagingCommands, string GUID, strin
 
 int main(int argc, char* argv[])
 {
-    
+
+  
     string rns_prefix = "rns:/etc/tmp/lhstesting/";
     /*
     boost::uuids::random_generator gen;
