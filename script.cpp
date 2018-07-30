@@ -7,6 +7,8 @@
 #include <sstream>
 #include <cstdlib>
 #include <unistd.h>
+#include <sys/types.h>
+#include <ctime>
 
 //#include <boost/uuid/uuid.hpp>            // uuid class
 //#include <boost/uuid/uuid_generators.hpp> // generators
@@ -248,14 +250,24 @@ void createStageInAndOutFile(vector<staging> stagingCommands, string GUID, strin
 int main(int argc, char* argv[])
 {
 
+  srand(time(NULL));
+  string rand_num = to_string((rand()%10)+1);
+
   
     string rns_prefix = "rns:/etc/tmp/lhstesting/";
-    /*
-    boost::uuids::random_generator gen;
-    boost::uuids::uuid id = gen();
-    string GUID = to_string(id);
-    */
-    string GUID = "b93c542a-98a4-44f0-be54-d16503e983bd";
+
+    string uid = to_string(getuid());
+    string pid = to_string(getpid());
+    
+
+    char hostname[1024];
+    hostname[1023] = '\0';
+    gethostname(hostname, 1023);
+    string hostname_string = string(hostname);
+
+    
+    
+    string GUID = hostname_string + uid + pid + rand_num;
     string filename = argv[1];
 
     map<string,string> Directives;
