@@ -1,0 +1,2 @@
+cp rns:/tmp/CCC/UVA/xcgbes/power61044338446/MySlurm.out local:/net/zf2/xcgbes/projectSlurm/general/mine.out
+cp rns:/tmp/CCC/UVA/xcgbes/power61044338446/tfile local:/net/zf2/xcgbes/projectSlurm/general/tfile

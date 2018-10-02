@@ -70,7 +70,7 @@ string memoryUnitConversion(string m)
     }
     else 
     {
-        cout << "You must include a unit for memory requirement." << endl;
+        cerr << "You must include a unit for memory requirement." << endl;
         exit(1);
     }
     
@@ -151,7 +151,13 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
     for (int i = 0; i < stagingCommands.size(); ++i)
     { 
         DataStaging += "\n<jsdl:DataStaging>\n<jsdl:FileName>";
-        DataStaging += stagingCommands[i].SourceFile; 
+        if (stagingCommands[i].StageIn)
+	{
+        	DataStaging += stagingCommands[i].TargetFile; 
+	}
+	else {
+        	DataStaging += stagingCommands[i].SourceFile; 
+	}
         DataStaging += "</jsdl:FileName>\n";
         DataStaging += "<jsdl:CreationFlag>"; // What should be the default creation flag?
         DataStaging += stagingCommands[i].CreationFlag;
@@ -244,6 +250,27 @@ void createStageInAndOutFile(vector<staging> stagingCommands, string GUID, strin
 }
 
 
+staging generate_stage_bash_file_in(string bashFile) {
+	// Generates a StagingOption for the bash file that is to be executed. ASG
+    	char buff[1024];
+    	char *path;
+    	path = getcwd(buff,1023);
+    	string cwd = path;
+	staging StagingOptions; // Instantiate the struct that will hold the data staging options/information
+	StagingOptions.SourceFile = bashFile;
+	StagingOptions.LocalSourcePath = cwd + "/" + bashFile;
+	StagingOptions.TargetFile = bashFile;
+	StagingOptions.LocalTargetPath = bashFile;
+	StagingOptions.CreationFlag = "overwrite";
+	StagingOptions.DeleteOnTermination = true;
+	StagingOptions.Unpack = false;
+	StagingOptions.Scratch = "";
+	StagingOptions.StageIn = true; 
+                
+	return StagingOptions;
+}
+
+
 // exit with non zero return value
 
 
@@ -253,8 +280,9 @@ int main(int argc, char* argv[])
   srand(time(NULL));
   string rand_num = to_string((rand()%10)+1);
 
-  
-    string rns_prefix = "rns:/etc/tmp/lhstesting/";
+ 
+	// needs to be changed to get instituion and userid from somewhere. 
+    string rns_prefix = "rns:/tmp/CCC/UVA/xcgbes/";
 
     string uid = to_string(getuid());
     string pid = to_string(getpid());
@@ -286,15 +314,20 @@ int main(int argc, char* argv[])
     ofstream shell(sh_outfile); // stream write to sh file
     string sent;
     Directives.insert(pair<string,string>("executable",sh_outfile));
+
+    // ASG: First things first. Generate a staging directive for the bash script.
+    StagingCommands.push_back(generate_stage_bash_file_in(sh_outfile));
     
     while (getline (file, sent)) // while there are lines left to read
         {
             if (sent.substr(0,7) == "#SBATCH") { // if line starts with #SBATCH
-            
-                string stripped = sent.substr(10,sent.length()); // strip #SBATCH and other unnecessary information 
+           	// Changed the substr from position 10 to 8 
+                string stripped = sent.substr(8,sent.length()); // strip #SBATCH and other unnecessary information 
                 int equals_index = stripped.find('=');
                 string directiveUsed = stripped.substr(0,equals_index);
                 string optionUsed = stripped.substr(equals_index+1);
+		//cout << "Directive = " << directiveUsed << "\n";
+		//cout << "option = " << optionUsed << "\n";
                 Directives.insert(pair<string,string>(directiveUsed, optionUsed));
 		
                 
@@ -315,7 +348,7 @@ int main(int argc, char* argv[])
                 string Stripped= sent.substr(5,sent.length());
                 
                 // If it's stage-in command
-                if (Stripped.substr(0,8) == "STAGE-IN"){
+                if (Stripped.substr(0,8)=="STAGE_IN"){
                     StagingOptions.StageIn = true; 
                     Stripped = Stripped.substr(9,Stripped.length()); 
                 }
@@ -324,7 +357,6 @@ int main(int argc, char* argv[])
                     StagingOptions.StageIn= false;
                     Stripped = Stripped.substr(10,Stripped.length());
                 }
-                
                 // Grab first file path and strip it from remaining command
                 string source_file_path= Stripped.substr(0, Stripped.find_first_of(" \t"));
 
@@ -359,6 +391,7 @@ int main(int argc, char* argv[])
                     StagingOptions.LocalTargetPath = cwd;
                 }
                 string target_file = target_file_path;
+		//cout << "source/target=" << source_file << "/" << target_file << "\n";
                 while (target_file.find_first_of("/") != -1){ 
                    target_file = target_file.substr(target_file.find_first_of("/")+1);
                 }
