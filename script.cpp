@@ -277,16 +277,15 @@ staging generate_stage_bash_file_in(string bashFile) {
 int main(int argc, char* argv[])
 {
 
-  srand(time(NULL));
-  string rand_num = to_string((rand()%10)+1);
-
+    srand(time(NULL));
+    string rand_num = to_string((rand()%10)+1);
  
 	// needs to be changed to get instituion and userid from somewhere. 
     string rns_prefix = "rns:/tmp/CCC/UVA/xcgbes/";
 
     string uid = to_string(getuid());
     string pid = to_string(getpid());
-    
+
 
     char hostname[1024];
     hostname[1023] = '\0';
@@ -296,6 +295,9 @@ int main(int argc, char* argv[])
     
     
     string GUID = hostname_string + uid + pid + rand_num;
+    if(argc < 2) {
+        return 1;
+    }
     string filename = argv[1];
 
     map<string,string> Directives;

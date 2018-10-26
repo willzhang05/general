@@ -40,6 +40,11 @@ function callToJSDL()
 {
 	echo "entering callToJSDL $1"
 	JOBDIR=`$MY_DIR_PATH/tojsdl $1`
+
+	if [[ $? -eq 1 ]] ; then
+		echo "No infile specified. Please specify an infile."
+		exit 1
+	fi
 	echo "JOBDIR is $JOBDIR"
 }
 
