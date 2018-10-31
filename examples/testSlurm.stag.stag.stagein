@@ -1,0 +1,2 @@
+cp local:/nfs/projectSlurm/testSlurm.stag.stag_.sh rns:/tmp/CCC/UVA/xcgbes/rce-slurm-front.novalocal100011244/testSlurm.stag.stag_.sh
+cp local:/nfs/projectSlurm/testSlurm.stag.stag_.sh rns:/tmp/CCC/UVA/xcgbes/rce-slurm-front.novalocal100011244/testSlurm.stag.stag_.sh
