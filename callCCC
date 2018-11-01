@@ -30,7 +30,7 @@
 # Would like to be able to handle user defined "SCRATCH" dirs
 
 
-INST_SCRATH="/tmp/CCC/UVA/"
+INST_SCRATH="/tmp/CCC/UVA"
 
 function checkCredentials(){
 	echo "entering checkCredentials - it is a NO-OP right now"
@@ -38,8 +38,8 @@ function checkCredentials(){
 
 function callToJSDL()
 {
-	echo "entering callToJSDL $1"
-	JOBDIR=`$MY_DIR_PATH/tojsdl $1`
+	echo "entering callToJSDL $SLURM_FILE"
+	JOBDIR=`$GENII_INSTALL_DIR/tojsdl $SLURM_FILE`
 
 	if [[ $? -eq 1 ]] ; then
 		echo "No infile specified. Please specify an infile."
@@ -53,7 +53,7 @@ function createDirPath()
 	echo "entering createDirPath"
 #	check if it exists ... and basename's up to /tmp/CCC/instituion/person
 	WHO=`whoami`
-	MKPATH=$INST_SCRATH$WHO/$JOBDIR
+	MKPATH=$INST_SCRATH/$WHO/$JOBDIR
 	echo "path is $MKPATH"
 	fastgrid mkdir $MKPATH
 
@@ -86,6 +86,10 @@ function copyOut() {
 function cleanUp() {
 
 	echo "entering cleanUp"
+	# Make more robust checking to prevent accidential deletion
+	if [[ $MKPATH == "" || $MKPATH == "/" ]] ; then
+		return
+	fi
 	fastgrid rm -r $MKPATH
 	fastgrid qcomplete /resources/CCC/queues/RegularQueue $TICKET
 }
@@ -114,14 +118,22 @@ if [[ "$SLURM_JOB_PARTITION" = "CCC" ]] ; then
 	exit 0;
 fi
 
-export MY_DIR_PATH=`dirname $0`
-SLURM_FILE=$1
+export SLURM_JOB_DIR=$( /usr/bin/scontrol show job $SLURM_JOB_ID | grep -i "WorkDir" | cut -d '=' -f 2- )
+export SLURM_JOB_COMMAND=$( /usr/bin/scontrol show job $SLURM_JOB_ID | grep -i "Command" | cut -d '=' -f 2- )
+export SLURM_JOB_STDIN=$( /usr/bin/scontrol show job $SLURM_JOB_ID | grep -i "StdIn" | cut -d '=' -f 2- )
+export SLURM_JOB_STDERR=$( /usr/bin/scontrol show job $SLURM_JOB_ID | grep -i "StdErr" | cut -d '=' -f 2- )
+export SLURM_JOB_STDOUT=$( /usr/bin/scontrol show job $SLURM_JOB_ID | grep -i "StdOut" | cut -d '=' -f 2- )
+
+SLURM_FILE=$SLURM_JOB_DIR/$SLURM_JOB_NAME 
 SLURM_BASE=${SLURM_FILE%.*}
 echo "slurm_base is $SLURM_BASE"
+pushd $SLURM_JOB_DIR
 callToJSDL $SLURM_FILE
 createDirPath
 copyIn
 submitAndWait
 copyOut
 cleanUp
-
+cp $SLURM_JOB_STDOUT ${SLURM_BASE}.stdout
+cp $SLURM_JOB_STDERR ${SLURM_BASE}.stderr
+popd
