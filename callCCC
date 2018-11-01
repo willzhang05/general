@@ -8,12 +8,12 @@
 
 
 # Steps
-# 1	Check if they have credentials
+# 1	(SKIP FOR NOW) Check if they have credentials
 #		If not, acquire them using a nonce methode
 #			
 # 2	Call toJSDL, get directory path
-# 3	Create directory path
-#		/tmp/CCC/institution/user_id/guid
+# 3	Create GFFS directory path
+#		grid mkdir /tmp/CCC/institution/user_id/guid
 # 4	If there is a copy in file
 #		copy each stage-in file.
 # 5 	Call qsub on /resources/CCC/queues/RegularQueue, save ticket
@@ -107,7 +107,12 @@ function submitAndWait() {
 		echo "Still waiting"
 		sleep 10
 	done
+
 }
+
+if [[ "$SLURM_JOB_PARTITION" = "CCC" ]] ; then
+	exit 0;
+fi
 
 export MY_DIR_PATH=`dirname $0`
 SLURM_FILE=$1
