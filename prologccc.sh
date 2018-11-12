@@ -41,6 +41,10 @@ function callToJSDL()
 	echo "entering callToJSDL $SLURM_FILE"
 	JOBDIR=`$GENII_INSTALL_DIR/tojsdl $SLURM_FILE`
 
+	if [[ $? -eq 1 ]] ; then
+		echo "No infile specified. Please specify an infile."
+		exit 1
+	fi
 	echo "JOBDIR is $JOBDIR"
 }
 
@@ -110,21 +114,20 @@ function submitAndWait() {
 
 }
 
-#if [[ "$SLURM_JOB_PARTITION" != "CCC" ]] ; then
-#	exit 0;
-#fi
-
-if [[ $# -eq 0 ]] ; then
-	echo "No job to run specified. Please specify a job."
-	exit 1
+if [[ "$SLURM_JOB_PARTITION" = "CCC" ]] ; then
+	exit 0;
 fi
 
-echo $SLURM_JOB_ID
+export SLURM_JOB_DIR=$( /usr/bin/scontrol show job $SLURM_JOB_ID | grep -i "WorkDir" | cut -d '=' -f 2- )
+export SLURM_JOB_COMMAND=$( /usr/bin/scontrol show job $SLURM_JOB_ID | grep -i "Command" | cut -d '=' -f 2- )
+export SLURM_JOB_STDIN=$( /usr/bin/scontrol show job $SLURM_JOB_ID | grep -i "StdIn" | cut -d '=' -f 2- )
+export SLURM_JOB_STDERR=$( /usr/bin/scontrol show job $SLURM_JOB_ID | grep -i "StdErr" | cut -d '=' -f 2- )
+export SLURM_JOB_STDOUT=$( /usr/bin/scontrol show job $SLURM_JOB_ID | grep -i "StdOut" | cut -d '=' -f 2- )
 
-SLURM_FILE=$SLURM_SUBMIT_DIR/$1
+SLURM_FILE=$SLURM_JOB_DIR/$SLURM_JOB_NAME 
 SLURM_BASE=${SLURM_FILE%.*}
 echo "slurm_base is $SLURM_BASE"
-pushd $SLURM_SUBMIT_DIR
+pushd $SLURM_JOB_DIR
 callToJSDL $SLURM_FILE
 createDirPath
 copyIn
