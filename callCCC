@@ -30,7 +30,7 @@
 # Would like to be able to handle user defined "SCRATCH" dirs
 
 
-INST_SCRATH="/tmp/CCC/UVA"
+INST_SCRATCH="/tmp/CCC/UVA"
 
 function checkCredentials(){
 	echo "entering checkCredentials - it is a NO-OP right now"
@@ -49,7 +49,7 @@ function createDirPath()
 	echo "entering createDirPath"
 #	check if it exists ... and basename's up to /tmp/CCC/instituion/person
 	WHO=`whoami`
-	MKPATH=$INST_SCRATH/$WHO/$JOBDIR
+	MKPATH=$INST_SCRATCH/$WHO/$JOBDIR
 	echo "path is $MKPATH"
 	fastgrid mkdir $MKPATH
 
