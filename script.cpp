@@ -16,8 +16,7 @@
 
 using namespace std;
 
-struct staging 
-{
+struct staging {
     bool StageIn; // default is stage in, if set to false then it's stage out
     string SourceFile;
     string LocalSourcePath;
@@ -30,8 +29,7 @@ struct staging
 
 };
 
-string clockTimeConversion(string t)
-{
+string clockTimeConversion(string t) {
     int hours = stoi(t.substr(0,t.find_first_of(":")));
     t = t.substr(t.find_first_of(":")+1);
     int minutes = stoi(t.substr(0,t.find_first_of(":")));
@@ -43,33 +41,27 @@ string clockTimeConversion(string t)
     
 }
 
-string memoryUnitConversion(string m)
-{   
+string memoryUnitConversion(string m) {   
     long converted_num = stoi(m.substr(0,m.length()-2));
-    if (m.find_first_of("g") != -1)
-    {
+    if (m.find_first_of("g") != -1) {
         converted_num = converted_num*1024*1024*1024;
         m = to_string(converted_num);
         return m;
     }
-    else if (m.find_first_of("m") != -1)
-    {
+    else if (m.find_first_of("m") != -1) {
         converted_num = converted_num*1024*1024;
         m = to_string(converted_num);
         return m;
     }
-    else if (m.find_first_of("k") != -1)
-    {
+    else if (m.find_first_of("k") != -1) {
         converted_num = converted_num*1024;
         m = to_string(converted_num);
         return m;
     }
-    else if (m.find_first_of("b") != -1)
-    {
+    else if (m.find_first_of("b") != -1) {
         return m.substr(0,m.length()-1);
     }
-    else 
-    {
+    else {
         cerr << "You must include a unit for memory requirement." << endl;
         exit(1);
     }
@@ -77,8 +69,7 @@ string memoryUnitConversion(string m)
     
 }
 
-void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging> stagingCommands, string GUID, string rns_prefix, string jsdl_outfile)
-{
+void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging> stagingCommands, string GUID, string rns_prefix, string jsdl_outfile) {
 
     ofstream jsdl(jsdl_outfile); // stream write to jsdl file
     map <string, string> :: iterator itr;
@@ -92,54 +83,47 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
     string DataStaging = "";
     bool job_name_not_added = true;
 
-    for (itr = directives.begin(); itr != directives.end(); ++itr)
-    {
+    for (itr = directives.begin(); itr != directives.end(); ++itr) {
         
-        if (itr-> first == "error")
-        {
+        if (itr-> first == "error") {
             POSIXApplication += "\n<jsdl-posix:Error>";
             POSIXApplication += itr->second;
             POSIXApplication += "</jsdl-posix:Error>";
         }
-	else if (itr-> first == "executable")
-	  {
+
+	else if (itr-> first == "executable") {
 	    POSIXApplication += "\n<jsdl-posix:Executable>";
 	    POSIXApplication += itr->second;
 	    POSIXApplication +="</jsdl-posix:Executable>";
-	  }
+	}
         
-        else if (itr-> first == "input")
-        {
+        else if (itr-> first == "input") {
             POSIXApplication += "\n<jsdl-posix:Input>";
             POSIXApplication += itr->second;
             POSIXApplication += "</jsdl-posix:Input>";
         }
 
-        else if (itr-> first == "output")
-        {
+        else if (itr-> first == "output") {
             POSIXApplication += "\n<jsdl-posix:Output>";
             POSIXApplication += itr->second;
             POSIXApplication += "</jsdl-posix:Output>";
         }
 
-        else if (itr -> first == "time")
-        {
+        else if (itr -> first == "time") {
             string WallclockTime = "\n<ns8:WallclockTime>\n<jsdl:UpperBoundedRange exclusiveBound=\"false\">";
             WallclockTime += clockTimeConversion(itr->second);
             WallclockTime += "</jsdl:UpperBoundedRange>\n</ns8:WallclockTime>";
             Resources += WallclockTime;
         }
 
-        else if (itr -> first == "job-name")
-        {
+        else if (itr -> first == "job-name") {
             JobIdentification += "\n<jsdl:JobName>";
             JobIdentification += itr->second;
             JobIdentification += "</jsdl:JobName>";
 	    job_name_not_added = false;
         }
 
-        else if (itr -> first == "mem")
-        {
+        else if (itr -> first == "mem") {
             Resources+= "\n<jsdl:TotalPhysicalMemory>\n<jsdl:UpperBoundedRange exclusiveBound=\"false\">";
             string num_bytes = memoryUnitConversion(itr->second); 
             Resources += num_bytes;     
@@ -151,8 +135,7 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
     for (int i = 0; i < stagingCommands.size(); ++i)
     { 
         DataStaging += "\n<jsdl:DataStaging>\n<jsdl:FileName>";
-        if (stagingCommands[i].StageIn)
-	{
+        if (stagingCommands[i].StageIn) {
         	DataStaging += stagingCommands[i].TargetFile; 
 	}
 	else {
@@ -163,24 +146,21 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
         DataStaging += stagingCommands[i].CreationFlag;
         DataStaging += "</jsdl:CreationFlag><jsdl:DeleteOnTermination>";
 
-        if (stagingCommands[i].DeleteOnTermination){DataStaging+= "true</jsdl:DeleteOnTermination>\n<jsdl:HandleAsArchive>";}
+        if (stagingCommands[i].DeleteOnTermination) {DataStaging+= "true</jsdl:DeleteOnTermination>\n<jsdl:HandleAsArchive>";}
         else {DataStaging += "false</jsdl:DeleteOnTermination>\n<jsdl:HandleAsArchive>";}
         
-        if (stagingCommands[i].Unpack){DataStaging+= "true</jsdl:HandleAsArchive>";}
+        if (stagingCommands[i].Unpack) {DataStaging+= "true</jsdl:HandleAsArchive>";}
         else {DataStaging += "false</jsdl:HandleAsArchive>";}
 
 
-        if (stagingCommands[i].StageIn)
-	  {
+        if (stagingCommands[i].StageIn) {
             DataStaging += "\n<jsdl:Source>\n<jsdl:URI>";
             DataStaging += rns_prefix;
             DataStaging += GUID + "/";
             DataStaging += stagingCommands[i].SourceFile; 
             // Check to see if source file is in working directory or is a path, if it's a path then pull just the file name (search for last '/')
             DataStaging += "</jsdl:URI>\n</jsdl:Source>";
-        }
-        else
-        {
+        } else {
             DataStaging += "\n<jsdl:Target>\n<jsdl:URI>";
             DataStaging += rns_prefix;
             DataStaging += GUID + "/";
@@ -195,9 +175,8 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
     // Add the different parts generated above to the jsdl file we are creating
     jsdl << JobDescriptionStart;
 
-    if (JobIdentification != "\n<jsdl:JobIdentification>"){
-      if (job_name_not_added)
-	{
+    if (JobIdentification != "\n<jsdl:JobIdentification>") {
+    	if (job_name_not_added) {
 	  JobIdentification += "\n<jsdl:JobName>Autogen_JobName</jsdl:JobName>";
 	  job_name_not_added = false;
 	}
@@ -205,11 +184,11 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
         jsdl << JobIdentification;
 	
     }
-    if (POSIXApplication != "\n<jsdl-posix:POSIXApplication>"){
+    if (POSIXApplication != "\n<jsdl-posix:POSIXApplication>") {
         POSIXApplication +=  "\n</jsdl-posix:POSIXApplication>";
         Application += POSIXApplication;
     }
-    if (Application != "\n<jsdl:Application>"){
+    if (Application != "\n<jsdl:Application>") {
         Application += "\n</jsdl:Application>";
         jsdl << Application;
     }
@@ -225,8 +204,7 @@ void processDirectivesIntoJSDLFile(map<string,string> directives, vector<staging
 
 }
 
-void createStageInAndOutFile(vector<staging> stagingCommands, string GUID, string rns_prefix, string filename, string sh_outfile)
-{
+void createStageInAndOutFile(vector<staging> stagingCommands, string GUID, string rns_prefix, string filename, string sh_outfile) {
     ofstream stagein(filename + ".stagein"); 
     ofstream stageout(filename + ".stageout");
 
@@ -274,8 +252,7 @@ staging generate_stage_bash_file_in(string bashFile) {
 // exit with non zero return value
 
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
 
     srand(time(NULL));
     string rand_num = to_string((rand()%10)+1);
@@ -336,7 +313,7 @@ int main(int argc, char* argv[])
             }
 
 
-            else if (sent.substr(0,4) == "#CCC"){ 
+            else if (sent.substr(0,4) == "#CCC") { 
                 staging StagingOptions; // Instantiate the struct that will hold the data staging options/information
                 StagingOptions.SourceFile = "";
                 StagingOptions.LocalSourcePath = "";
@@ -350,12 +327,12 @@ int main(int argc, char* argv[])
                 string Stripped= sent.substr(5,sent.length());
                 
                 // If it's stage-in command
-                if (Stripped.substr(0,8)=="STAGE_IN"){
+                if (Stripped.substr(0,8)=="STAGE_IN") {
                     StagingOptions.StageIn = true; 
                     Stripped = Stripped.substr(9,Stripped.length()); 
                 }
                 // Otherwise it must be a stage-out command
-                else{
+                else {
                     StagingOptions.StageIn= false;
                     Stripped = Stripped.substr(10,Stripped.length());
                 }
@@ -373,7 +350,7 @@ int main(int argc, char* argv[])
                 }
                 string source_file = source_file_path;
                 // Strip the source file path to just the file name
-                while (source_file.find_first_of("/") != -1){
+                while (source_file.find_first_of("/") != -1) {
                    source_file = source_file.substr(source_file.find_first_of("/")+1);
                 }
                 StagingOptions.SourceFile = source_file; 
@@ -394,7 +371,7 @@ int main(int argc, char* argv[])
                 }
                 string target_file = target_file_path;
 		//cout << "source/target=" << source_file << "/" << target_file << "\n";
-                while (target_file.find_first_of("/") != -1){ 
+                while (target_file.find_first_of("/") != -1) { 
                    target_file = target_file.substr(target_file.find_first_of("/")+1);
                 }
                 StagingOptions.TargetFile= target_file;
@@ -402,31 +379,31 @@ int main(int argc, char* argv[])
 
                 
                 // Grab each word from remaining command and add it to the staging object based on what option it  should trigger
-                while (Stripped != ""){
+                while (Stripped != "") {
                     // Take the first optional parameter (if it exists) and add it to the staging object based on the keyword
                     int next_space =  Stripped.find_first_of(" \t");
                     string next_directive = Stripped.substr(0, next_space);
 
-                    if (next_directive == "overwrite"){
+                    if (next_directive == "overwrite") {
                         StagingOptions.CreationFlag = "overwrite";
                     }
-                    else if (next_directive == "append"){
+                    else if (next_directive == "append") {
                         StagingOptions.CreationFlag = "append";
                     }
-                    else if (next_directive == "do-not-overwrite"){
+                    else if (next_directive == "do-not-overwrite") {
                         StagingOptions.CreationFlag = "do-not-overwrite";
                     }
-                    else if (next_directive == "delete-on-termination"){
+                    else if (next_directive == "delete-on-termination") {
                         StagingOptions.DeleteOnTermination = true;
                     }
-                    else if (next_directive == "unpack"){
+                    else if (next_directive == "unpack") {
                         StagingOptions.Unpack = true;
                     }
-                    else if (next_directive.length() >= 8 && next_directive.substr(0,8) == "scratch="){
+                    else if (next_directive.length() >= 8 && next_directive.substr(0,8) == "scratch=") {
                         StagingOptions.Scratch = next_directive.substr(8,next_directive.length());
                     }
-                    if (next_space == -1){Stripped = "";}
-                    else{
+                    if (next_space == -1) {Stripped = "";}
+                    else {
                         Stripped = Stripped.substr(next_space + 1);
                     }
 
@@ -436,7 +413,7 @@ int main(int argc, char* argv[])
                 StagingCommands.push_back(StagingOptions);
 
             }
-            else{
+            else {
                 shell << sent << endl;
             }
         }
