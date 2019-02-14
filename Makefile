@@ -1,9 +1,9 @@
-CXX=g++
+CXX=clang++
 CXXFLAGS= -std=c++11 -o tojsdl -g
 
 OFILES = script.cpp
 
 script:	$(OFILES)
-		$(CXX) $(OFILES) $(CXXFLAGS)
+	$(CXX) $(OFILES) $(CXXFLAGS)
 clean:
-		rm -f tojsdl
+	rm -f tojsdl
