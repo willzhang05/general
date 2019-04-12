@@ -11,7 +11,10 @@
 function slurm_job_submit(job_desc, part_list, submit_uid)
 	if job_desc.partition == "compute" then
 		slurm.log_user("%s", job_desc.partition)
-		output = assert(io.popen("/etc/slurm-llnl/test.sh"))
+		for key,value in pairs(job_desc) do
+		    slurm.log_user("%s %s", key, value)
+		end
+		output = assert(io.popen("/etc/slurm-llnl/ccc.sh"))
 		for line in output:lines() do
 		    slurm.log_user("%s", line)
 		end
